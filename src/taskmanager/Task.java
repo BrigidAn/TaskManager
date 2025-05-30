@@ -5,6 +5,7 @@
 package taskmanager;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,9 @@ import java.util.List;
  * @author ochim
  */
 public class Task {
+    public enum Priority { HIGH, MEDIUM, LOW }
+    public enum Status { PENDING, COMPLETED }
+    
    private int id;
     private String title;
     private String description;
@@ -22,38 +26,20 @@ public class Task {
     private boolean isRecurring;
     private String dueDate; 
 
-    Task(String title, String description, Priority priority, LocalDate dueDate, boolean recurring) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    void setCompleted(boolean b) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-    
-     public enum Priority {
-        LOW,
-        MEDIUM,
-        HIGH
-    }
-
-    public enum Status {
-        PENDING,
-        COMPLETED
-    }
-    
     public Task() {
         // Default constructor needed for Gson
     }
 
-    public Task(int id, String title, String description, Priority priority, Status status, boolean isRecurring, String dueDate) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.priority = priority;
-        this.status = status;
-        this.isRecurring = isRecurring;
-        this.dueDate = dueDate;
-    }
+    public Task(String title, String description, Priority priority, LocalDate dueDate, boolean isRecurring) {
+    this.id = -1; // or generate a unique ID
+    this.title = title;
+    this.description = description;
+    this.priority = priority;
+    this.status = Status.PENDING;
+    this.isRecurring = isRecurring;
+    this.dueDate = dueDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+}
+
 
     // Getters and setters for all fields
     public int getId() { return id; }

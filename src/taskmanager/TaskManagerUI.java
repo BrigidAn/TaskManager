@@ -4,6 +4,7 @@
  */
 package taskmanager;
 
+import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -37,13 +38,9 @@ public class TaskManagerUI extends javax.swing.JFrame {
     private TaskController controller;
     private int editingRow = -1;
 
-    public TaskManagerUI() throws UnsupportedLookAndFeelException {
-        
-        
-        UIManager.setLookAndFeel(new FlatLightLaf());
-        
-      controller = new TaskController(this);
-
+    public TaskManagerUI() {
+ 
+       controller = new TaskController(this);
         setTitle("Enhanced Task Manager");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 650);
@@ -63,15 +60,21 @@ public class TaskManagerUI extends javax.swing.JFrame {
             }
         });
 
-        filterComboBox = new JComboBox<>(new String[]{"All", "Completed", "Pending"});
-        filterComboBox.setBounds(340, 10, 150, 30);
-        add(filterComboBox);
-        filterComboBox.addActionListener(e -> refreshTaskList());
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setBounds(20, 50, 840, 200);
+        add(tabbedPane);
 
+        // Table for all tasks
         taskTable = new JTable(new DefaultTableModel(new Object[]{"Title", "Due Date", "Priority", "Recurring", "Status"}, 0));
-        JScrollPane scrollPane = new JScrollPane(taskTable);
-        scrollPane.setBounds(20, 50, 840, 200);
-        add(scrollPane);
+        JScrollPane allScrollPane = new JScrollPane(taskTable);
+        tabbedPane.addTab("All Tasks", allScrollPane);
+
+        // Table for completed tasks
+        JTable completedTaskTable = new JTable(new DefaultTableModel(new Object[]{"Title", "Due Date", "Priority", "Recurring", "Status"}, 0));
+        JScrollPane completedScrollPane = new JScrollPane(completedTaskTable);
+        tabbedPane.addTab("Completed Tasks", completedScrollPane);
+
+       
 
         addTaskButton = new JButton("Add Task");
         addTaskButton.setBounds(20, 260, 120, 30);
@@ -213,30 +216,38 @@ public class TaskManagerUI extends javax.swing.JFrame {
 
 
     private void refreshTaskList() {
-        DefaultTableModel model = (DefaultTableModel) taskTable.getModel();
-        model.setRowCount(0);
+    DefaultTableModel allModel = (DefaultTableModel) taskTable.getModel();
+    allModel.setRowCount(0);
 
-        String search = searchField.getText().toLowerCase();
-        String filter = (String) filterComboBox.getSelectedItem();
+    JTable completedTaskTable = (JTable) ((JScrollPane)((JTabbedPane)getContentPane().getComponent(3)).getComponentAt(1)).getViewport().getView(); // HACK: quick way to get completed task table
+    DefaultTableModel completedModel = (DefaultTableModel) completedTaskTable.getModel();
+    completedModel.setRowCount(0);
 
-        List<Task> filteredTasks = controller.getAllTasks().stream()
-                .filter(task -> task.getTitle().toLowerCase().contains(search))
-                .filter(task -> {
-                    if (filter.equals("All")) return true;
-                    if (filter.equals("Completed")) return task.getStatus() == Task.Status.COMPLETED;
-                    return task.getStatus() == Task.Status.PENDING;
-                }).collect(Collectors.toList());
+    String search = searchField.getText().toLowerCase();
+    String filter = (String) filterComboBox.getSelectedItem();
 
-        for (Task task : filteredTasks) {
-            model.addRow(new Object[]{
-                    task.getTitle(),
-                    task.getDueDate(),
-                    task.getPriority(),
-                    task.isRecurring() ? "Yes" : "No",
-                    task.getStatus()
+    for (Task task : controller.getAllTasks()) {
+        boolean matchesSearch = task.getTitle().toLowerCase().contains(search);
+        boolean matchesFilter = filter.equals("All") || 
+            (filter.equals("Completed") && task.getStatus() == Task.Status.COMPLETED) || 
+            (filter.equals("Pending") && task.getStatus() == Task.Status.PENDING);
+
+        if (matchesSearch && matchesFilter) {
+            allModel.addRow(new Object[]{
+                task.getTitle(), task.getDueDate(), task.getPriority(),
+                task.isRecurring() ? "Yes" : "No", task.getStatus()
+            });
+        }
+
+        if (task.getStatus() == Task.Status.COMPLETED) {
+            completedModel.addRow(new Object[]{
+                task.getTitle(), task.getDueDate(), task.getPriority(),
+                task.isRecurring() ? "Yes" : "No", task.getStatus()
             });
         }
     }
+}
+
 
     private void clearForm() {
         titleField.setText("");
@@ -275,25 +286,18 @@ public class TaskManagerUI extends javax.swing.JFrame {
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        try {
-        UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
-    } catch (Exception ex) {
-        ex.printStackTrace();
+   public static void main(String args[]) {
+    try {
+        UIManager.setLookAndFeel(new FlatLightLaf());  // or FlatDarkLaf
+    } catch (UnsupportedLookAndFeelException e) {
+        e.printStackTrace();
     }
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    new TaskManagerUI().setVisible(true);
-                } catch (UnsupportedLookAndFeelException ex) {
-                    Logger.getLogger(TaskManagerUI.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-    }
+
+    SwingUtilities.invokeLater(() -> {
+        new TaskManagerUI().setVisible(true);
+    });
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
+   }
 }
